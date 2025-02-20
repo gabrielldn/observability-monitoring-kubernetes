@@ -1,0 +1,70 @@
+---
+#! Arquivo de Dependências para Roles do Ansible
+
+#? Descrição Geral:
+# Este arquivo especifica as dependências de funções (roles) utilizadas nos playbooks do Ansible.
+# Ele define as roles necessárias para a execução de configurações automatizadas e garante que 
+# estejam disponíveis e atualizadas no ambiente local antes da execução dos playbooks.
+
+#? Estrutura do Arquivo:
+# - `src`: Especifica a origem da role (URL ou repositório Git).
+# - `name`: Nome da role que será usada no playbook.
+# - `scm`: Sistema de controle de versão utilizado (ex.: git).
+# - `version`: Versão ou branch da role no repositório de origem.
+
+#? Roles Definidas:
+# - `vm_disk_expand`: Role responsável por redimensionar discos LVM em máquinas virtuais.
+# - `node_exporter`: Role para instalação e configuração do Node Exporter.
+
+#? Instruções de Uso:
+# 1. Para baixar ou atualizar as roles especificadas neste arquivo, execute o comando:
+#    
+#TODO    ansible-galaxy install -r roles/requirements.yml --force
+#
+# 2. Certifique-se de que o comando acima seja executado antes de rodar os playbooks que utilizam as roles listadas.
+# 3. Mantenha este arquivo atualizado com as roles utilizadas no projeto para garantir rastreabilidade.
+
+#? Notas:
+# - As roles devem ser hospedadas em um repositório Git ou em outro serviço compatível com o Ansible Galaxy.
+# - Utilize versões específicas das roles sempre que possível para evitar inconsistências entre ambientes.
+
+roles:
+  # Role para expansão automática de disco em VMs
+  - src: git@github.com:pcce-redes/ansible-role-resize-disk-lvm.git
+    name: vm_disk_expand
+    scm: git
+    version: homolog # ALTERE PARA MAIN CASO SEJA PRODUÇÃO
+
+  # Role para instalação do Docker Engine
+  - src: git@github.com:pcce-redes/ansible-role-docker-engine-install.git
+    name: docker_engine_install
+    scm: git
+    version: homolog # ALTERE PARA MAIN CASO SEJA PRODUÇÃO
+
+  # Role para instalação do Docker Engine
+  - src: git@github.com:pcce-redes/ansible-role-node-exporter.git
+    name: node_exporter
+    scm: git
+    version: homolog # ALTERE PARA MAIN CASO SEJA PRODUÇÃO
+
+  # Role para Criação do Mapeamento de NFS
+  - src: git@github.com:pcce-redes/ansible-role-nfs-mapping.git # Essa role exige que dentro do inventory seja definido o nome da aplicação que será mapeada com a variável "appmapping"
+    name: nfs-mapping
+    scm: git
+    version: homolog # ALTERE PARA MAIN CASO SEJA PRODUÇÃO
+  #! A role nfs-mapping exige que dentro do inventory seja definido o nome da aplicação que será mapeada.
+  #! Exemplo:
+  #! all:
+  #!   vars:
+  #!     ansible_user: coticinfra
+  #!     appmapping: "gitlab-exemplo"
+
+  # Role para instalação do Otel Agent
+  - src: git@github.com:pcce-redes/ansible-role-otel-agent.git
+    name: otel-agent
+    scm: git
+    version: homolog # ALTERE PARA MAIN CASO SEJA PRODUÇÃO
+
+#! Observações Finais:
+#! - Roles adicionais podem ser adicionadas seguindo a mesma estrutura.
+#! - Certifique-se de que os repositórios listados sejam acessíveis a partir do ambiente onde o comando será executado.
