@@ -1,0 +1,12 @@
+groups:
+- name: web
+  rules:
+  - alert: WebDown
+  # condição de alerta
+    expr: up != 1
+    for: 10s
+    labels:
+      team: infraestrutura
+    annotations:
+      titulo: Aplicação
+      descricao: Fora do ar

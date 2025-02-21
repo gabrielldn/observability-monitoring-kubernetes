@@ -1,0 +1,138 @@
+services:
+
+  otelcollector:
+    container_name: otelcollector
+    image: otel/opentelemetry-collector-contrib:0.119.0
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - /mnt/volumes/observabilidade/prod/otel-collector/otel-collector.yml:/etc/otel-collector.yml:ro
+    command:
+      - --config=/etc/otel-collector.yml
+    restart: on-failure
+    networks:
+      - monitoring
+    labels:
+      - logging=promtail
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+    volumes:
+      - /mnt/volumes/observabilidade/prod/alert-rules/alert-rules.yml:/etc/prometheus/alert-rules.yml
+      - /mnt/volumes/observabilidade/prod/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: on-failure
+    labels:
+      - logging=promtail
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:latest
+    volumes:
+      - /mnt/volumes/observabilidade/prod/blackbox/blackbox.yml:/etc/blackbox-exporter/blackbox.yml
+    ports:
+      - "9115:9115"
+    networks:
+      - monitoring
+    labels:
+      - logging=promtail
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: grafana
+    user: "0"
+    volumes:
+      - /mnt/volumes/observabilidade/prod/configs/grafana/datasource.yml:/etc/grafana/provisioning/datasource/provisioning-datasource.yml:ro
+      - /mnt/volumes/observabilidade/prod/grafana_data:/var/lib/grafana
+
+    environment:
+      #- GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_PASSWORD=admin
+      #- GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_USERS_DEFAULT_THEME=light
+      - GF_SERVER_ROOT_URL=http://observabilidade.pc.local
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
+    networks:
+      - monitoring
+    labels:
+      - logging=promtail
+
+  loki:
+    image: grafana/loki:2.8.2
+    container_name: loki
+    ports:
+      - 3100:3100
+    volumes:
+      - /mnt/volumes/observabilidade/prod/loki-config/loki-config.yml:/etc/loki/loki-config.yml
+    networks:
+      - monitoring
+    restart: on-failure
+    labels:
+      - logging=promtail
+
+  promtail:
+    image: grafana/promtail:2.8.2
+    container_name: promtail
+    volumes:
+      - /mnt/volumes/observabilidade/prod/promtail/var/log:/var/log
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /mnt/volumes/observabilidade/prod/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+    command:
+      - --config.file=/etc/promtail/promtail-config.yml
+    restart: on-failure
+    networks:
+      - monitoring
+    labels:
+      - logging=promtail
+
+  tempo:
+    image: grafana/tempo:2.4.1
+    container_name: tempo
+    volumes:
+      - /mnt/volumes/observabilidade/prod/tempo/tempo-local.yml:/etc/tempo-local.yml
+     # - /mnt/volumes/observabilidade/prod/tempo:/tempo
+    ports:
+      - 3200:3200
+    command:
+      - --config.file=/etc/tempo-local.yml
+      - --target=all
+      - --storage.trace.backend=local
+      - --storage.trace.local.path=/var/tempo
+      - --auth.enabled=false
+    networks:
+      - monitoring
+    restart: on-failure
+    labels:
+      - logging=promtail
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - /mnt/volumes/observabilidade/prod/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    networks:
+      - monitoring
+    restart: on-failure
+    labels:
+      - logging=promtail
+
+
+
+#volumes:
+#  db_mongo:
+#  grafana_data:
+networks:
+  monitoring:
+    driver: bridge

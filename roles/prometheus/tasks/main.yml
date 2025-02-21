@@ -1,0 +1,18 @@
+---
+# tasks file for prometheus
+- name: Criar diretório /mnt/volumes/observabilidade/prod/ se não existir
+  file:
+    path: /mnt/volumes/observabilidade/prod/prometheus
+    state: directory
+    owner: infra
+    group: infra
+    mode: '0755'
+  ignore_errors: yes
+
+- name: Copiar o arquivo prometheus.yml para a VM da telemetria
+  template:
+    src: prometheus.j2
+    dest: /mnt/volumes/observabilidade/prod/prometheus/prometheus.yml
+    owner: infra
+    group: infra
+    mode: '0644'  

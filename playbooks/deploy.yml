@@ -1,58 +1,19 @@
 ---
-#! Playbook de Configuração para Ansible
-
-#? Descrição Geral:
-# Este playbook é utilizado para configurar as VMs listadas no inventário do Ansible. 
-# Ele executa as funções (roles) necessárias para a expansão de disco das VMs 
-# e para a instalação e configuração do Node Exporter, um serviço de monitoramento.
-
-#? Estrutura do Playbook:
-# - name: Fornece um nome descritivo para a execução.
-# - hosts: Define o grupo ou os hosts aos quais o playbook será aplicado, conforme especificado no inventário.
-# - become: Habilita a elevação de privilégios (sudo) para executar tarefas administrativas.
-# - roles: Lista de funções (roles) que serão aplicadas aos hosts.
-
-#? Grupos no Inventário:
-# - Certifique-se de que as VMs estejam organizadas no grupo "VM" no arquivo de inventário 
-#   para que este playbook seja aplicado corretamente.
-
-#? Funções (Roles):
-# - `vm_disk_expand`: Função responsável por expandir o disco das VMs.
-# - `node_exporter`: Função que instala e configura o Node Exporter para coleta de métricas.
-
-#? Instruções de Uso:
-# 1. Certifique-se de que os hosts estejam configurados corretamente no arquivo de inventário 
-#    (por exemplo, `inventories/inventory.yml`) no grupo "VM".
-# 2. Confirme que todas as funções (roles) listadas estão disponíveis no diretório `roles` 
-#    ou foram baixadas previamente usando o arquivo `requirements.yml`.
-# 3. Caso as funções não estejam disponíveis, execute o seguinte comando para baixá-las:
-#    
-#TODO   ansible-galaxy install -r requirements.yml
-#    
-# 4. Para adicionar novas funções personalizadas, crie-as com o comando:
-#    
-#TODO    ansible-galaxy init roles/nome_da_funcao
-#    
-# 5. Execute o playbook com o comando:
-#    
-#TODO    ansible-playbook playbooks/deploy.yml -i inventories/inventory.yml
-#    
-
-#! Notas:
-# - Certifique-se de que o Ansible esteja instalado e configurado no ambiente onde o playbook será executado.
-# - Ajuste o campo `hosts` conforme necessário para aplicar as configurações a diferentes grupos ou hosts específicos.
-# - Funções (roles) personalizadas podem ser adicionadas ao diretório `roles` ou referenciadas pelo caminho relativo.
-
 - name: Configura a VM
-  hosts: GRPVMAIN
+  hosts: observabilidade
   become: yes
   roles:
     - vm_disk_expand
     - node_exporter
-#    - ../roles/role1 # Exemplo de função (role) personalizada a ser aplicada.
-#    - ../roles/role2 # Outro exemplo de função personalizada.
-
-#! Observações Finais:
-#! - Utilize práticas seguras ao armazenar senhas ou informações sensíveis, evitando defini-las diretamente nos arquivos.
-#! - Use variáveis e criptografia com o Ansible Vault, se necessário.
-#! - Verifique se as funções estão atualizadas e compatíveis com a versão do Ansible utilizada.
+    - docker_engine_install
+    - ../roles/prometheus
+    - ../roles/blackbox-exporter
+    - ../roles/otel-collector
+    - ../roles/grafana-datasource
+    - ../roles/loki-config
+    - ../roles/tempo-local
+    - ../roles/promtail-config
+    - ../roles/alertmanager
+    - ../roles/alert-rules
+    - ../roles/install-docker
+    - ../roles/compose-observabilidade

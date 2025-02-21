@@ -1,0 +1,156 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+
+rule_files:
+  - 'alert-rules.yml'
+
+alerting:
+  alertmanagers:
+    - scheme: http
+      static_configs:
+        - targets:
+            - "alertmanager:9093"
+
+
+
+scrape_configs:
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+
+
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+
+
+  - job_name: 'otelcollector'
+    static_configs:
+      - targets: ['otelcollector:8889']
+
+
+  - job_name: 'blackbox'
+    static_configs:
+      - targets: ['10.10.120.49:9115']
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['10.10.106.40:9121']
+
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
+
+
+  - job_name: 'traefik'
+    static_configs:
+      - targets: ['10.10.112.40']
+    metrics_path: '/metrics'
+
+  - job_name: 'MONGODB1'
+    static_configs:
+      - targets: ['10.10.111.10:9216']
+
+  - job_name: 'MONGODB2'
+    static_configs:
+      - targets: ['10.10.111.11:9216']
+
+  - job_name: 'MONGODB3'
+    static_configs:
+      - targets: ['10.10.111.12:9216']
+
+  - job_name: 'MONGODB-BACKUP'
+    static_configs:
+      - targets: ['10.10.111.13:9216']
+
+  - job_name: 'MONGODB-ARBITER'
+    static_configs:
+      - targets: ['10.10.111.14:9216']
+
+  - job_name: 'mongodb1-node-exporter'
+    static_configs:
+      - targets: ['10.10.111.10:9100']
+
+  - job_name: 'mongodb2-node-exporter'
+    static_configs:
+      - targets: ['10.10.111.11:9100']
+
+  - job_name: 'mongodb3-node-exporter'
+    static_configs:
+      - targets: ['10.10.111.12:9100']
+
+  - job_name: 'mongodb-backup-node-exporter'
+    static_configs:
+      - targets: ['10.10.111.13:9100']
+
+  - job_name: 'mongodb-arbiter-node-exporter'
+    static_configs:
+      - targets: ['10.10.111.14:9100']
+
+  - job_name: 'HAPROXY1-KV-HAP'
+    static_configs:
+      - targets: ['10.10.112.121:9100']
+
+  - job_name: 'HAPROXY2-KV-HAP'
+    static_configs:
+      - targets: ['10.10.112.122:9100']
+
+  - job_name: 'MONGODB-VIP'
+    static_configs:
+      - targets: ['10.10.112.123:9100']
+
+  - job_name: 'kong-local'
+    static_configs:
+      - targets: ['10.10.104.126']
+    metrics_path: '/rrmmpytfgbvjwwidsclozuuvonqt/metrics'
+
+  - job_name: 'rh'
+    static_configs:
+      - targets: ['10.10.120.73:8000']
+    metrics_path: '/api/v1/metrics'
+
+
+  - job_name: 'kong-homolog'
+    static_configs:
+      - targets: ["10.10.106.5"]
+    metrics_path: "/admin/metrics/"
+    basic_auth:
+      username: "InfraAdmin"
+      password: "Infra@1808"
+
+
+  - job_name: 'SISTEMAS-INTERNOS'
+    scrape_interval: 2m
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - http://172.17.210.18/sistemas/sgh #18
+        - http://172.17.210.18/sistemas/drh/ #drh
+        - http://172.17.210.18/sistemas/sisprocjur #18
+        - http://172.17.210.18/sistemas/CadFunc/ #cadfunc
+        - http://10.10.110.47:8081 #GLPI
+        - http://10.10.120.59:3004 #mulher
+        - https://webmail.policiacivil.ce.gov.br #zimbra
+        - http://10.10.120.49:80 #zabbix
+        - https://suite.ce.gov.br #suite
+        - https://consulta.sspds.ce.gov.br/consulta/index.do #consulta integrada
+        - https://tjce.jus.br/fermoju/guias-judiciais
+        - https://seguranca.sinesp.gov.br/sinesp-seguranca/login.jsf #sinesp
+        - http://10.10.101.72:8000/login #extras
+        - http://172.24.24.7:1010/sip3w/ #sip3w
+        - https://esaj.tjce.jus.br/esaj/portal.do?servico=740000 #esaj
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: 10.10.120.49:9115
+      - target_label: instance
+        source_labels: [__param_target]
+

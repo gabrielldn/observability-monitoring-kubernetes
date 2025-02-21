@@ -1,0 +1,17 @@
+---
+# tasks file for compose-observabilidade
+
+- name: Copiar o arquivo docker-compose.yml para a VM da telemetria
+  template:
+    src: templates/docker-compose.j2
+    dest: /mnt/volumes/observabilidade/prod/docker-compose.yml
+    owner: infra
+    group: infra
+    mode: '0644'
+    force: yes
+
+
+- name: Rodar o Docker Compose up
+  shell: docker compose -f /mnt/volumes/observabilidade/prod/docker-compose.yml up -d
+  args:
+    chdir: /mnt/volumes/observabilidade/prod/

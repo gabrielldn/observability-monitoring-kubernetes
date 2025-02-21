@@ -56,7 +56,7 @@ roles:
   #! Exemplo:
   #! all:
   #!   vars:
-  #!     ansible_user: coticinfra
+  #!     ansible_user: infra
   #!     appmapping: "gitlab-exemplo"
 
   # Role para instalação do Otel Agent

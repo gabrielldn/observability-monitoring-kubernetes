@@ -1,0 +1,18 @@
+---
+# tasks file for otelcollector
+- name: Criar diretório /mnt/volumes/observabilidade/prod/otel-collector se não existir
+  file:
+    path: /mnt/volumes/observabilidade/prod/otel-collector
+    state: directory
+    owner: infra
+    group: infra
+    mode: '0755'
+  ignore_errors: yes
+
+- name: Copiar o arquivo docker-compose.yml para a VM da telemetria
+  template:
+    src: otel-collector.j2
+    dest: /mnt/volumes/observabilidade/prod/otel-collector/otel-collector.yml
+    owner: infra
+    group: infra
+    mode: '0644'

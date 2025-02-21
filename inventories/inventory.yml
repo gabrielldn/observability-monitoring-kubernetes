@@ -27,38 +27,34 @@
 
 all:
   vars:
-    ansible_user: coticinfra
+    ansible_user: infra
     ansible_port: 2223
     ansible_become: true
-    ansible_sudo_pass: "pcce@1808"
-    ansible_ssh_private_key_file: >-
-      {{
-        '/home/semaphore/.ssh/id_rsa' if (lookup('file', '/home/semaphore/.ssh/id_rsa', errors='ignore') != '') 
-        else '~/.ssh/id_rsa'
-      }}
+    ansible_sudo_pass: "Infra@1808"
+    ansible_ssh_private_key_file: "~/.ssh/id_rsa"
     ansible_connection: ssh
     ansible_ssh_extra_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
     host_key_checking: False
     ansible_python_interpreter: /usr/bin/python3
 
   children:
-    GRPVMAIN:
+    observabilidade: #minusculo
       hosts:
-        VGRPVMAIN1:
-          ansible_host: 99.99.99.99
+        observabilidade1: #minusculo
+          ansible_host: 10.10.120.45
 
-    GRPVMSECONDARY:
-      hosts:
-        GRPVMSECONDARY1:
-          ansible_host: 99.99.99.999
-        GRPVMSECONDARY2:
-          ansible_host: 99.99.999.99
+    # GRPVMSECONDARY:
+    #   hosts:
+    #     GRPVMSECONDARY1:
+    #       ansible_host: 99.99.99.999
+    #     GRPVMSECONDARY2:
+    #       ansible_host: 99.99.999.99
 
-    GRPVMTERCIARY:
-      hosts:
-        GRPVMTERCIARY1:
-          ansible_host: 99.999.99.99
-        GRPVMTERCIARY2:
-          ansible_host: 999.99.99.99
-        GRPVMTERCIARY3:
-          ansible_host: 999.99.99.999
+    # GRPVMTERCIARY:
+    #   hosts:
+    #     GRPVMTERCIARY1:
+    #       ansible_host: 99.999.99.99
+    #     GRPVMTERCIARY2:
+    #       ansible_host: 999.99.99.99
+    #     GRPVMTERCIARY3:
+    #       ansible_host: 999.99.99.999
