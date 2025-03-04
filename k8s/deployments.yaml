@@ -1,0 +1,276 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otelcollector
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otelcollector
+  template:
+    metadata:
+      labels:
+        app: otelcollector
+    spec:
+      containers:
+      - name: otelcollector
+        image: otel/opentelemetry-collector-contrib:latest
+        args:
+          - --config=/etc/otel-collector.yml
+        ports:
+          - containerPort: 4317
+          - containerPort: 4318
+        volumeMounts:
+          - name: otelcollector-config
+            mountPath: /etc/otel-collector.yml
+            subPath: otel-collector.yml
+      volumes:
+        - name: otelcollector-config
+          configMap:
+            name: otel-collector-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:latest
+        args:
+          - --config.file=/etc/prometheus/prometheus.yml
+        ports:
+          - containerPort: 9090
+        volumeMounts:
+          - name: prometheus-config
+            mountPath: /etc/prometheus/prometheus.yml
+            subPath: prometheus.yml
+          - name: prometheus-rules
+            mountPath: /etc/prometheus/alert-rules.yml
+            subPath: alert-rules.yml
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: prometheus-config
+        - name: prometheus-rules
+          configMap:
+            name: prometheus-config
+            items:
+              - key: alert-rules.yml
+                path: alert-rules.yml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+      - name: alertmanager
+        image: prom/alertmanager:latest
+        args:
+          - --config.file=/etc/alertmanager/alertmanager.yml
+        ports:
+          - containerPort: 9093
+        volumeMounts:
+          - name: alertmanager-config
+            mountPath: /etc/alertmanager/alertmanager.yml
+            subPath: alertmanager.yml
+      volumes:
+        - name: alertmanager-config
+          configMap:
+            name: alertmanager-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loki
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loki
+  template:
+    metadata:
+      labels:
+        app: loki
+    spec:
+      containers:
+      - name: loki
+        image: grafana/loki:latest
+        args:
+          - -config.file=/etc/loki/loki-config.yml
+        ports:
+          - containerPort: 3100
+        volumeMounts:
+          - name: loki-config
+            mountPath: /etc/loki/loki-config.yml
+            subPath: loki-config.yml
+          - name: loki-wal
+            mountPath: /wal
+          - name: loki-data
+            mountPath: /loki
+      volumes:
+        - name: loki-config
+          configMap:
+            name: loki-config
+        - name: loki-wal
+          emptyDir: {}
+        - name: loki-data
+          emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        ports:
+          - containerPort: 3000
+        env:
+          - name: GF_SECURITY_ADMIN_USER
+            value: "admin"
+          - name: GF_SECURITY_PASSWORD
+            value: "admin"
+          - name: GF_USERS_DEFAULT_THEME
+            value: "light"
+          - name: GF_SERVER_ROOT_URL
+            value: "http://localhost:3000"
+        volumeMounts:
+          - name: datasource
+            mountPath: /etc/grafana/provisioning/datasource/provisioning-datasource.yml
+            subPath: datasource.yml
+          # Volume para dados persistentes podem ser adicionados conforme necessário.
+      volumes:
+        - name: datasource
+          configMap:
+            name: grafana-datasource
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: promtail
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: promtail
+  template:
+    metadata:
+      labels:
+        app: promtail
+    spec:
+      containers:
+      - name: promtail
+        image: grafana/promtail:latest
+        args:
+          - --config.file=/etc/promtail/promtail-config.yml
+        volumeMounts:
+          - name: promtail-config
+            mountPath: /etc/promtail/promtail-config.yml
+            subPath: promtail-config.yml
+          # Monte volumes para logs e socket se necessário.
+      volumes:
+        - name: promtail-config
+          configMap:
+            name: promtail-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tempo
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tempo
+  template:
+    metadata:
+      labels:
+        app: tempo
+    spec:
+      containers:
+      - name: tempo
+        image: grafana/tempo:latest
+        args:
+          - --config.file=/etc/tempo-local.yml
+          - --target=all
+          - --storage.trace.backend=local
+          - --storage.trace.local.path=/var/tempo
+          - --auth.enabled=false
+        ports:
+          - containerPort: 3200
+        volumeMounts:
+          - name: tempo-config
+            mountPath: /etc/tempo-local.yml
+            subPath: tempo-local.yml
+      volumes:
+        - name: tempo-config
+          configMap:
+            name: tempo-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blackbox-exporter
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blackbox-exporter
+  template:
+    metadata:
+      labels:
+        app: blackbox-exporter
+    spec:
+      containers:
+        - name: blackbox-exporter
+          image: prom/blackbox-exporter:latest
+          args:
+            - --config.file=/etc/blackbox-exporter/blackbox.yml
+          ports:
+            - containerPort: 9115
+          volumeMounts:
+            - name: blackbox-config
+              mountPath: /etc/blackbox-exporter/blackbox.yml
+              subPath: blackbox.yml
+      volumes:
+        - name: blackbox-config
+          configMap:
+            name: blackbox-config

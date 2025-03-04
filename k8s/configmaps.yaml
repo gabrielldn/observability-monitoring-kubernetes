@@ -1,0 +1,503 @@
+# ConfigMap para otel-collector
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: observability
+data:
+  otel-collector.yml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      attributes:
+        actions:
+          - key: route
+            from_attribute: body.route.name
+            action: insert
+          - key: workspace_name
+            from_attribute: body.workspace_name
+            action: insert
+          - key: status
+            from_attribute: body.response.status
+            action: insert
+          - key: service_name
+            from_attribute: resource["service.name"]
+            action: insert
+    exporters:
+      prometheus:
+        endpoint: "0.0.0.0:8889"
+      otlp:
+        endpoint: "http://tempo:4317"
+        tls:
+          insecure: true
+      loki:
+        endpoint: "http://loki:3100/loki/api/v1/push"
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          exporters: [prometheus]
+        traces:
+          receivers: [otlp]
+          exporters: [otlp]
+        logs:
+          receivers: [otlp]
+          processors: [attributes]
+          exporters: [loki]
+---
+# ConfigMap para Prometheus
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: observability
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      scrape_timeout: 10s
+
+    rule_files:
+      - 'alert-rules.yml'
+
+    alerting:
+      alertmanagers:
+        - scheme: http
+          static_configs:
+            - targets:
+                - "alertmanager:9093"
+
+    scrape_configs:
+      - job_name: 'grafana'
+        static_configs:
+          - targets: ['grafana:3000']
+
+      - job_name: 'loki'
+        static_configs:
+          - targets: ['loki:3100']
+
+      - job_name: 'otelcollector'
+        static_configs:
+          - targets: ['otelcollector:8889']
+
+      - job_name: 'blackbox'
+        static_configs:
+          - targets: ['blackbox:9115']
+
+      - job_name: 'alertmanager'
+        static_configs:
+          - targets: ['alertmanager:9093']
+
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['prometheus:9090']
+
+      - job_name: 'BLACKBOX-TARGETS'
+        scrape_interval: 2m
+        metrics_path: /probe
+        params:
+          module: [http_2xx]
+        static_configs:
+          - targets:
+            - https://www.google.com
+            - https://www.bing.com
+            - https://www.yahoo.com
+            - https://www.duckduckgo.com
+            - https://www.wikipedia.org
+            - https://www.youtube.com
+            - https://www.facebook.com
+            - https://www.twitter.com
+            - https://www.instagram.com
+            - https://www.linkedin.com
+            - https://www.github.com
+            - https://www.gitlab.com
+            - https://www.bitbucket.com
+            - https://www.docker.com
+            - https://www.kubernetes.io
+            - https://www.prometheus.io
+            - https://www.grafana.com
+            - https://www.loki.com
+            - https://www.jaeger.com
+            - https://www.opentelemetry.io
+            - https://www.elastic.co
+            - https://www.splunk.com
+            - https://www.datadog.com
+            - https://www.newrelic.com
+            - https://www.appdynamics.com
+            - https://www.dynatrace.com
+            - https://www.zabbix.com
+            - https://www.nagios.com
+            - https://www.reddit.com
+            - https://www.medium.com
+            - https://www.stackoverflow.com
+            - https://www.quora.com
+            - https://www.tumblr.com
+            - https://www.pinterest.com
+            - https://www.flickr.com
+            - https://www.vimeo.com
+            - https://www.twitch.tv
+            - https://www.slack.com
+            - https://www.discord.com
+            - https://www.skype.com
+            - https://www.zoom.us
+            - https://www.microsoft.com
+            - https://www.apple.com
+            - https://www.amazon.com
+            - https://www.netflix.com
+            - https://www.spotify.com
+            - https://www.soundcloud.com
+            - https://www.dropbox.com
+            - https://www.box.com
+            - https://www.salesforce.com
+            - https://www.oracle.com
+            - https://www.ibm.com
+            - https://www.sap.com
+            - https://www.adobe.com
+            - https://www.autodesk.com
+            - https://www.intuit.com
+            - https://www.paypal.com
+            - https://www.stripe.com
+            - https://www.shopify.com
+            - https://www.squarespace.com
+            - https://www.wix.com
+            - https://www.weebly.com
+            - https://www.wordpress.com
+            - https://www.joomla.org
+            - https://www.drupal.org
+            - https://www.magento.com
+            - https://www.bigcommerce.com
+            - https://www.woocommerce.com
+            - https://www.prestashop.com
+            - https://www.opencart.com
+            - https://www.oscommerce.com
+            - https://www.zen-cart.com
+            - https://www.x-cart.com
+            - https://www.volusion.com
+            - https://www.3dcart.com
+            - https://www.ecwid.com
+            - https://failchecktestforalertrule.com # This is a fake URL to test the alert rule
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - target_label: __address__
+            replacement: blackbox:9115
+          - target_label: instance
+            source_labels: [__param_target]
+  alert-rules.yml: |
+    groups:
+    - name: web
+      rules:
+      - alert: WebDown
+        expr: up != 1
+        for: 10s
+        labels:
+          team: Devops
+        annotations:
+          summary: "Web Application Down"
+          description: "The web application is down for more than 10 seconds."
+          runbook: "https://example.com/runbooks/web-down"
+          severity: "critical"
+          impact: "High"
+          action: "Check the web server logs and restart the service if necessary."
+          details: |
+            - Alert Name: {{ .Labels.alert }}
+            - Instance: {{ .Labels.instance }}
+            - Job: {{ .Labels.job }}
+            - Severity: {{ .Labels.severity }}
+            - Description: {{ .Annotations.description }}
+            - Runbook: {{ .Annotations.runbook }}
+---
+# ConfigMap para Alertmanager
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: observability
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 1m
+
+    route:
+      group_by: ['alert', 'job']
+      group_wait: 10s
+      group_interval: 30s
+      repeat_interval: 30m # intervalo de tempo para o reenvio de um novo alerta.
+      receiver: 'webhook'
+
+    receivers:
+      - name: 'webhook'
+        webhook_configs:
+        - url: 'https://discord.com/api/webhooks/1346514049608843264/FTnbzFyLTUZjcRTQEgl0UTZfBqAJqw99S5gTdmnrcIAGSvYjH-4MuV_N6hFS1eJxzbZs'
+          send_resolved: true # envia mensagem para o webhook quando o problema no serviço for resolvido.
+
+    templates:
+      - '/etc/alertmanager/template/*.tmpl'
+---
+# ConfigMap para Promtail
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promtail-config
+  namespace: observability
+data:
+  promtail-config.yml: |
+    server:
+      http_listen_port: 9080
+      grpc_listen_port: 0
+
+    positions:
+      filename: /tmp/positions.yaml
+
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+
+    scrape_configs:
+      - job_name: flog_scrape
+        docker_sd_configs:
+          - host: unix:///var/run/docker.sock
+            refresh_interval: 5s #intervalo de tempo para o promtail verificar novos containers
+            filters:
+              - name: label
+                values: ["logging=promtail"]
+        relabel_configs:
+          - source_labels: ['__meta_docker_container_name']
+            regex: '/(.*)'
+            target_label: 'container'
+          - source_labels: ['__meta_docker_container_log_stream']
+            target_label: 'logstream'
+          - source_labels: ['__meta_docker_container_label_logging_jobname']
+            target_label: 'job'
+        pipeline_stages:
+          - cri: {}
+          - multiline:
+              firstline: ^\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2},\d{3}
+              max_wait_time: 3s
+          - json:
+              expressions:
+                level: level
+---
+# ConfigMap para Loki
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-config
+  namespace: observability
+data:
+  loki-config.yml: |
+    auth_enabled: false
+
+    server:
+      http_listen_port: 3100
+
+    ingester:
+      lifecycler:
+        ring:
+          kvstore:
+            store: inmemory
+          replication_factor: 1
+      chunk_idle_period: 5m
+      chunk_retain_period: 30s
+
+    schema_config:
+      configs:
+        - from: 2020-10-24
+          store: boltdb-shipper
+          object_store: filesystem
+          schema: v11
+          index:
+            prefix: index_
+            period: 24h
+
+    storage_config:
+      boltdb_shipper:
+        active_index_directory: /loki/index
+        cache_location: /loki/boltdb-cache
+        # retention_period: 7d # Definir o período de retenção de logs no Loki posteriormente
+      filesystem:
+        directory: /loki/chunks
+
+    compactor:
+      working_directory: /loki/compactor
+
+    limits_config:
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
+      allow_structured_metadata: false
+
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 168h
+---
+# ConfigMap para Datasource do Grafana
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource
+  namespace: observability
+data:
+  datasource.yml: |
+    apiVersion: 1
+
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      uid: prometheus
+      access: proxy
+      orgId: 1
+      url: http://prometheus:9090
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+      jsonData:
+        httpMethod: GET
+    - name: Tempo
+      type: tempo
+      uid: tempo
+      access: proxy
+      orgId: 1
+      url: http://tempo:3200
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+      apiVersion: 1
+      jsonData:
+        httpMethod: GET
+        serviceMap:
+          datasourceUid: prometheus
+        tracesToLogsV2:
+          datasourceUid: 'loki'
+          spanStartTimeShift: '-1h'
+          spanEndTimeShift: '1h'
+          filterByTraceID: true
+          filterBySpanID: true
+          customQuery: false
+          query: 'method="$${__span.tags.method}"'
+    - name: loki
+      type: loki
+      uid: loki
+      access: proxy
+      orgId: 1
+      url: http://loki:3100
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+      jsonData:
+        derivedFields:
+        - datasourceName: Tempo
+          datasourceUid: tempo
+          # matcherRegex: trace_id=(\w+)
+          matcherRegex: trace_id=([0-9a-fA-F]+)
+          name: traceID
+          url: '$${__value.raw}'
+---
+# ConfigMap para Blackbox
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blackbox-config
+  namespace: observability
+data:
+  blackbox.yml: |
+    modules:
+      http_2xx:
+        prober: http
+        timeout: 5s
+        http:
+          valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+          valid_status_codes: []  # Considera qualquer código 2xx como válido
+          method: GET
+          tls_config:
+            insecure_skip_verify: false
+
+      http_post_2xx:
+        prober: http
+        timeout: 5s
+        http:
+          valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+          valid_status_codes: []  # Considera qualquer código 2xx como válido
+          method: POST
+          tls_config:
+            insecure_skip_verify: false
+
+      tcp_connect:
+        prober: tcp
+        timeout: 5s
+        tcp:
+          query_response: []
+
+      icmp_ping:
+        prober: icmp
+        timeout: 5s
+        icmp:
+          preferred_ip_protocol: "ip4"  # Pode ser "ip4" ou "ip6"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tempo-config
+  namespace: observability
+data:
+  tempo-local.yml: |
+    auth_enabled: false
+    server:
+      http_listen_port: 3200
+
+    distributor:
+      receivers:                           
+        jaeger:                            
+          protocols:                   
+            thrift_http:                   
+            grpc:                         
+            thrift_binary:
+            thrift_compact:
+        otlp:
+          protocols:
+            http:
+              endpoint: "0.0.0.0:4318"
+            grpc:
+              endpoint: "0.0.0.0:4317"
+
+    ingester:
+      trace_idle_period: 10s
+      max_block_duration: 5m
+        
+    compactor:
+      compaction:
+        block_retention: 168h
+
+    storage:
+      trace:
+        backend: local
+        wal:
+          path: /var/tempo/wal
+        local:
+          path: /var/tempo/blocks
+        block:
+          bloom_filter_false_positive: 0.05
+          v2_index_downsample_bytes: 1000
+          v2_encoding: zstd                
+
+    metrics_generator:
+      registry:
+        external_labels:
+          source: tempo
+          cluster: docker-compose
+      storage:
+        path: /var/tempo/generator/wal
+        remote_write:
+          - url: http://prometheus:9090/api/v1/write
+            send_exemplars: true 
+
+    overrides:
+      defaults:
+        metrics_generator:
+          processors: [service-graphs, span-metrics] 
