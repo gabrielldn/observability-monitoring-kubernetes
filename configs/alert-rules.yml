@@ -1,0 +1,22 @@
+groups:
+- name: web
+  rules:
+  - alert: WebDown
+    expr: up != 1
+    for: 10s
+    labels:
+      team: Devops
+    annotations:
+      summary: "Web Application Down"
+      description: "The web application is down for more than 10 seconds."
+      runbook: "https://example.com/runbooks/web-down"
+      severity: "critical"
+      impact: "High"
+      action: "Check the web server logs and restart the service if necessary."
+      details: |
+        - Alert Name: {{ .Labels.alert }}
+        - Instance: {{ .Labels.instance }}
+        - Job: {{ .Labels.job }}
+        - Severity: {{ .Labels.severity }}
+        - Description: {{ .Annotations.description }}
+        - Runbook: {{ .Annotations.runbook }}

@@ -1,1 +1,22 @@
-/playbooks/utils
+# Ignore macOS system files
+.DS_Store
+
+# Ignore Windows system files
+Thumbs.db
+
+# Ignore log files
+*.log
+
+# Ignore IDE configuration directories
+.idea/
+.vscode/
+
+# Ignore node_modules directory
+node_modules/
+
+# Ignore docker-compose override file
+docker-compose.override.yml
+
+# Ignore Grafana configuration directories
+configs/grafana/
+configs/var/

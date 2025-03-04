@@ -1,0 +1,136 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+
+rule_files:
+  - 'alert-rules.yml'
+
+alerting:
+  alertmanagers:
+    - scheme: http
+      static_configs:
+        - targets:
+            - "alertmanager:9093"
+
+
+
+scrape_configs:
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+
+
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+
+
+  - job_name: 'otelcollector'
+    static_configs:
+      - targets: ['otelcollector:8889']
+
+
+  - job_name: 'blackbox'
+    static_configs:
+      - targets: ['blackbox:9115']
+
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
+
+  - job_name: 'BLACKBOX-TARGETS'
+    scrape_interval: 2m
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - https://www.google.com
+        - https://www.bing.com
+        - https://www.yahoo.com
+        - https://www.duckduckgo.com
+        - https://www.wikipedia.org
+        - https://www.youtube.com
+        - https://www.facebook.com
+        - https://www.twitter.com
+        - https://www.instagram.com
+        - https://www.linkedin.com
+        - https://www.github.com
+        - https://www.gitlab.com
+        - https://www.bitbucket.com
+        - https://www.docker.com
+        - https://www.kubernetes.io
+        - https://www.prometheus.io
+        - https://www.grafana.com
+        - https://www.loki.com
+        - https://www.jaeger.com
+        - https://www.opentelemetry.io
+        - https://www.elastic.co
+        - https://www.splunk.com
+        - https://www.datadog.com
+        - https://www.newrelic.com
+        - https://www.appdynamics.com
+        - https://www.dynatrace.com
+        - https://www.zabbix.com
+        - https://www.nagios.com
+        - https://www.reddit.com
+        - https://www.medium.com
+        - https://www.stackoverflow.com
+        - https://www.quora.com
+        - https://www.tumblr.com
+        - https://www.pinterest.com
+        - https://www.flickr.com
+        - https://www.vimeo.com
+        - https://www.twitch.tv
+        - https://www.slack.com
+        - https://www.discord.com
+        - https://www.skype.com
+        - https://www.zoom.us
+        - https://www.microsoft.com
+        - https://www.apple.com
+        - https://www.amazon.com
+        - https://www.netflix.com
+        - https://www.spotify.com
+        - https://www.soundcloud.com
+        - https://www.dropbox.com
+        - https://www.box.com
+        - https://www.salesforce.com
+        - https://www.oracle.com
+        - https://www.ibm.com
+        - https://www.sap.com
+        - https://www.adobe.com
+        - https://www.autodesk.com
+        - https://www.intuit.com
+        - https://www.paypal.com
+        - https://www.stripe.com
+        - https://www.shopify.com
+        - https://www.squarespace.com
+        - https://www.wix.com
+        - https://www.weebly.com
+        - https://www.wordpress.com
+        - https://www.joomla.org
+        - https://www.drupal.org
+        - https://www.magento.com
+        - https://www.bigcommerce.com
+        - https://www.woocommerce.com
+        - https://www.prestashop.com
+        - https://www.opencart.com
+        - https://www.oscommerce.com
+        - https://www.zen-cart.com
+        - https://www.x-cart.com
+        - https://www.volusion.com
+        - https://www.3dcart.com
+        - https://www.ecwid.com
+        - https://failchecktestforalertrule.com # This is a fake URL to test the alert rule
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: blackbox:9115
+      - target_label: instance
+        source_labels: [__param_target]
+
