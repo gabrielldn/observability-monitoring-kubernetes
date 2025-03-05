@@ -1,406 +1,406 @@
-# Projeto  O&M Kubernetees
+# O&M Kubernetes Project
 
-![Observabilidade](https://img.shields.io/badge/Observabilidade-K8s-blue)
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-1.0-green)
-![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL%20v3-orange)
+![Observability](https://img.shields.io/badge/Observability-K8s-blue)
+![Version](https://img.shields.io/badge/Version-1.0-green)
+![License](https://img.shields.io/badge/License-GPL%20v3-orange)
 
-## Sumário
-- [Introdução](#introdução)
-- [Arquitetura](#arquitetura)
-  - [Componentes](#componentes)
-  - [Fluxo de Dados](#fluxo-de-dados)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Pré-requisitos](#pré-requisitos)
-- [Instalação](#instalação)
-- [Uso](#uso)
-  - [Deploy do Stack](#deploy-do-stack)
-  - [Verificar Status](#verificar-status)
-  - [Visualizar Logs](#visualizar-logs)
-  - [Atualizar Stack](#atualizar-stack)
-  - [Remover Stack](#remover-stack)
-- [Componentes em Detalhes](#componentes-em-detalhes)
-  - [OpenTelemetry Collector](#opentelemetry-collector)
-  - [Prometheus](#prometheus)
-  - [Alertmanager](#alertmanager)
-  - [Loki](#loki)
-  - [Grafana](#grafana)
-  - [Promtail](#promtail)
-  - [Tempo](#tempo)
-  - [Blackbox Exporter](#blackbox-exporter)
-- [Configurações](#configurações)
-  - [Personalização](#personalização)
-  - [Alertas](#alertas)
-  - [Integrações](#integrações)
-- [Solução de Problemas](#solução-de-problemas)
-- [Contribuição](#contribuição)
-- [Licença](#licença)
+## Table of Contents
+- [Introduction](#introduction)
+- [Architecture](#architecture)
+   - [Components](#components)
+   - [Data Flow](#data-flow)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Usage](#usage)
+   - [Deploy the Stack](#deploy-the-stack)
+   - [Check Status](#check-status)
+   - [View Logs](#view-logs)
+   - [Update Stack](#update-stack)
+   - [Remove Stack](#remove-stack)
+- [Components in Detail](#components-in-detail)
+   - [OpenTelemetry Collector](#opentelemetry-collector)
+   - [Prometheus](#prometheus)
+   - [Alertmanager](#alertmanager)
+   - [Loki](#loki)
+   - [Grafana](#grafana)
+   - [Promtail](#promtail)
+   - [Tempo](#tempo)
+   - [Blackbox Exporter](#blackbox-exporter)
+- [Configurations](#configurations)
+   - [Customization](#customization)
+   - [Alerts](#alerts)
+   - [Integrations](#integrations)
+- [Troubleshooting](#troubleshooting)
+- [Contribution](#contribution)
+- [License](#license)
 
-## Introdução
+## Introduction
 
-O ** O&M Kubernetees** é uma solução completa para implementação de um stack de observabilidade e monitoramento moderno em ambientes Kubernetes. Este projeto automatiza a implantação e gerenciamento de uma suite integrada de ferramentas para monitoramento, logging, tracing e alertas, fornecendo visibilidade abrangente sobre a infraestrutura e aplicações.
+The **O&M Kubernetes** is a complete solution for implementing a modern observability and monitoring stack in Kubernetes environments. This project automates the deployment and management of an integrated suite of tools for monitoring, logging, tracing, and alerts, providing comprehensive visibility into infrastructure and applications.
 
-A solução é projetada seguindo os princípios das três pilares da observabilidade e monitoramento:
-- **Métricas**: Coleta e visualização de métricas com Prometheus e Grafana
-- **Logs**: Agregação e análise de logs com Loki e Promtail
-- **Traces**: Rastreamento distribuído com Tempo
+The solution is designed following the principles of the three pillars of observability and monitoring:
+- **Metrics**: Collection and visualization of metrics with Prometheus and Grafana
+- **Logs**: Aggregation and analysis of logs with Loki and Promtail
+- **Traces**: Distributed tracing with Tempo
 
-Adicionalmente, o stack inclui monitoramento de disponibilidade de endpoints externos via Blackbox Exporter e gerenciamento avançado de alertas através do Alertmanager, com integração direta a webhooks (como Discord).
+Additionally, the stack includes monitoring of external endpoints via Blackbox Exporter and advanced alert management through Alertmanager, with direct integration to webhooks (such as Discord).
 
-## Arquitetura
+## Architecture
 
-### Componentes
+### Components
 
-O stack de observabilidade e monitoramento é composto pelos seguintes componentes principais:
+The observability and monitoring stack consists of the following main components:
 
-- **OpenTelemetry Collector**: Coleta, processa e exporta dados de telemetria
-- **Prometheus**: Sistema de monitoramento e alerta de séries temporais
-- **Alertmanager**: Gerenciamento de alertas e notificações
-- **Loki**: Sistema de agregação de logs inspirado no Prometheus
-- **Grafana**: Plataforma de visualização e análise
-- **Promtail**: Agente que envia logs para o Loki
-- **Tempo**: Sistema de rastreamento distribuído
-- **Blackbox Exporter**: Monitoramento de endpoints externos via HTTP, HTTPS, DNS, TCP e ICMP
+- **OpenTelemetry Collector**: Collects, processes, and exports telemetry data
+- **Prometheus**: Time-series monitoring and alerting system
+- **Alertmanager**: Alert and notification management
+- **Loki**: Log aggregation system inspired by Prometheus
+- **Grafana**: Visualization and analytics platform
+- **Promtail**: Agent that sends logs to Loki
+- **Tempo**: Distributed tracing system
+- **Blackbox Exporter**: Monitoring of external endpoints via HTTP, HTTPS, DNS, TCP, and ICMP
 
-### Fluxo de Dados
+### Data Flow
 
 ```
-                  ┌─────────────┐
-                  │ Aplicações  │
-                  └──────┬──────┘
-                         │
-                         ▼
-              ┌─────────────────────┐
-              │ OpenTelemetry       │
-              │ Collector           │
-              └───┬───────┬─────────┘
-                  │       │         │
-       ┌──────────┘       │         └──────────┐
-       │                  │                    │
-       ▼                  ▼                    ▼
-┌─────────────┐    ┌─────────────┐      ┌─────────────┐
-│ Prometheus   │    │    Loki     │      │   Tempo     │
-│ (Métricas)   │    │   (Logs)    │      │  (Traces)   │
-└──────┬───────┘    └──────┬──────┘      └──────┬──────┘
-       │                   │                    │
-       │                   │                    │
-       └───────────┬───────┴────────────┬──────┘
-                   │                    │
-                   ▼                    ▼
-           ┌─────────────┐      ┌─────────────┐
-           │   Grafana   │      │ Alertmanager│
-           │(Visualização)│     │  (Alertas)  │
-           └─────────────┘      └─────────────┘
+                     ┌─────────────┐
+                     │ Applications│
+                     └──────┬──────┘
+                            │
+                            ▼
+                  ┌─────────────────────┐
+                  │ OpenTelemetry       │
+                  │ Collector           │
+                  └───┬───────┬─────┬───┘
+                      │       │     │
+           ┌──────────┘       │     └──────────┐
+           │                  │                │
+           ▼                  ▼                ▼
+ ┌──────────────┐    ┌─────────────┐     ┌─────────────┐
+ │ Prometheus   │    │    Loki     │     │   Tempo     │
+ │ (Metrics)    │    │   (Logs)    │     │  (Traces)   │
+ └──────┬───────┘    └──────┬──────┘     └──────┬──────┘
+        │                   │                   │
+        │                   │                   │
+        └───────────┬───────┴────────────┬──────┘
+                    │                    │
+                    ▼                    ▼
+             ┌─────────────┐      ┌─────────────┐
+             │   Grafana   │      │ Alertmanager│
+             │  (Visual)   │      │  (Alerts)   │
+             └─────────────┘      └─────────────┘
 ```
 
-## Estrutura do Projeto
+## Project Structure
 
 ```
 observability-monitoring-kubernetes/
 ├── k8s/
-│   ├── configmaps.yaml    # Configurações de todos os componentes
-│   ├── deployments.yaml   # Deployments Kubernetes para cada serviço
-│   ├── namespace.yaml     # Definição do namespace dedicado
-│   └── services.yaml      # Definições de serviços Kubernetes
-├── script.sh              # Script de gerenciamento do stack
-├── LICENSE                # Arquivo de licença (GNU GPL v3)
-└── README.md              # Esta documentação
+│   ├── configmaps.yaml    # Configurations for all components
+│   ├── deployments.yaml   # Kubernetes deployments for each service
+│   ├── namespace.yaml     # Dedicated namespace definition
+│   └── services.yaml      # Kubernetes service definitions
+├── script.sh              # Stack management script
+├── LICENSE                # License file (GNU GPL v3)
+└── README.md              # This documentation
 ```
 
-## Pré-requisitos
+## Prerequisites
 
-- **Kubernetes Cluster**: Um cluster Kubernetes funcional (Minikube, Kind, EKS, GKE, AKS, etc.)
-- **kubectl**: Ferramenta de linha de comando do Kubernetes (v1.20+)
-  - Instalação: [https://kubernetes.io/docs/tasks/tools/](https://kubernetes.io/docs/tasks/tools/)
-  - Configuração correta do `kubeconfig` apontando para o cluster desejado
-- **Permissões**: Acesso para criar/modificar recursos no cluster (namespaces, deployments, services, configmaps)
-- **Recursos Recomendados**:
-  - Pelo menos 4GB de RAM disponível
-  - Pelo menos 2 vCPUs 
-  - Pelo menos 10GB de espaço em disco
+- **Kubernetes Cluster**: A functional Kubernetes cluster (Minikube, Kind, EKS, GKE, AKS, etc.)
+- **kubectl**: Kubernetes command-line tool (v1.20+)
+   - Installation: [https://kubernetes.io/docs/tasks/tools/](https://kubernetes.io/docs/tasks/tools/)
+   - Correct configuration of `kubeconfig` pointing to the desired cluster
+- **Permissions**: Access to create/modify resources in the cluster (namespaces, deployments, services, configmaps)
+- **Recommended Resources**:
+   - At least 4GB of available RAM
+   - At least 2 vCPUs 
+   - At least 10GB of disk space
 
-## Instalação
+## Installation
 
-1. Clone o repositório:
-   ```bash
-   gh repo clone gabrielldn/observability-monitoring-kubernetes
-   cd observability-monitoring-kubernetes
-   ```
+1. Clone the repository:
+    ```bash
+    gh repo clone gabrielldn/observability-monitoring-kubernetes
+    cd observability-monitoring-kubernetes
+    ```
 
-2. Verifique se o kubectl está configurado corretamente:
-   ```bash
-   kubectl cluster-info
-   ```
+2. Verify that kubectl is correctly configured:
+    ```bash
+    kubectl cluster-info
+    ```
 
-3. Dê permissão de execução ao script:
-   ```bash
-   chmod +x script.sh
-   ```
+3. Grant execution permission to the script:
+    ```bash
+    chmod +x script.sh
+    ```
 
-## Uso
+## Usage
 
-O script `script.sh` é o ponto central para gerenciar todo o stack de observabilidade e monitoramento.
+The `script.sh` script is the central point for managing the entire observability and monitoring stack.
 
-### Deploy do Stack
+### Deploy the Stack
 
-Para implantar todo o stack de observabilidade e monitoramento:
+To deploy the entire observability and monitoring stack:
 
 ```bash
 ./script.sh deploy
 ```
 
-Este comando irá:
-1. Criar o namespace `observability`
-2. Aplicar todos os ConfigMaps com configurações
-3. Implantar todos os componentes (Deployments)
-4. Configurar os Services para comunicação entre componentes
+This command will:
+1. Create the `observability` namespace
+2. Apply all ConfigMaps with configurations
+3. Deploy all components (Deployments)
+4. Configure the Services for communication between components
 
-### Verificar Status
+### Check Status
 
-Para verificar o status de todos os componentes:
+To check the status of all components:
 
 ```bash
 ./script.sh status
 ```
 
-Este comando mostrará:
-- Status de todos os pods do namespace
-- Status de todos os serviços do namespace
+This command will show:
+- Status of all pods in the namespace
+- Status of all services in the namespace
 
-### Visualizar Logs
+### View Logs
 
-Para visualizar logs, há várias opções:
+To view logs, there are several options:
 
 ```bash
-# Visualizar logs de todos os pods
+# View logs of all pods
 ./script.sh logs
 
-# Visualizar logs de um componente específico
+# View logs of a specific component
 ./script.sh logs grafana
 
-# Visualizar logs em tempo real (follow)
+# View logs in real-time (follow)
 ./script.sh logs loki -f
 
-# Visualizar logs de um componente em tempo real
+# View logs of a component in real-time
 ./script.sh logs prometheus -f
 ```
 
-### Atualizar Stack
+### Update Stack
 
-Para atualizar o stack após alterações nas configurações:
+To update the stack after configuration changes:
 
 ```bash
 ./script.sh update
 ```
 
-### Remover Stack
+### Remove Stack
 
-Para remover completamente o stack do cluster:
+To completely remove the stack from the cluster:
 
 ```bash
 ./script.sh destroy
 ```
 
-Este comando remove todos os recursos na seguinte ordem:
-1. Serviços
+This command removes all resources in the following order:
+1. Services
 2. Deployments
 3. ConfigMaps
 4. Namespace
 
-## Componentes em Detalhes
+## Components in Detail
 
 ### OpenTelemetry Collector
 
-**Função**: Coleta, processa e exporta dados de telemetria (métricas, logs e traces).
+**Function**: Collects, processes, and exports telemetry data (metrics, logs, and traces).
 
-**Características**:
-- Suporta protocolos gRPC (porta 4317) e HTTP (porta 4318)
-- Configurado para enviar:
-  - Métricas para Prometheus
-  - Traces para Tempo
-  - Logs para Loki
-- Processadores configurados para enriquecimento de dados
+**Features**:
+- Supports gRPC (port 4317) and HTTP (port 4318) protocols
+- Configured to send:
+   - Metrics to Prometheus
+   - Traces to Tempo
+   - Logs to Loki
+- Processors configured for data enrichment
 
-**Acesso**: Internamente via `otelcollector:4317` ou `otelcollector:4318`
+**Access**: Internally via `otelcollector:4317` or `otelcollector:4318`
 
-**Configuração**: Ver `configmaps.yaml` - seção `otel-collector-config`
+**Configuration**: See `configmaps.yaml` - section `otel-collector-config`
 
 ### Prometheus
 
-**Função**: Sistema de monitoramento e armazenamento de métricas de séries temporais.
+**Function**: Time-series monitoring and alerting system.
 
-**Características**:
-- Intervalos de scrape configurados para 15 segundos
-- Coleta métricas de todos os componentes do stack
-- Integrado com Blackbox Exporter para monitoramento externo
-- Regras de alerta configuradas
+**Features**:
+- Scrape intervals configured to 15 seconds
+- Collects metrics from all stack components
+- Integrated with Blackbox Exporter for external monitoring
+- Alert rules configured
 
-**Acesso**: Internamente via `prometheus:9090`
+**Access**: Internally via `prometheus:9090`
 
-**Configuração**: Ver `configmaps.yaml` - seção `prometheus-config`
+**Configuration**: See `configmaps.yaml` - section `prometheus-config`
 
 ### Alertmanager
 
-**Função**: Gerencia alertas gerados pelo Prometheus, incluindo silenciamento, inibição e agrupamento.
+**Function**: Manages alerts generated by Prometheus, including silencing, inhibition, and grouping.
 
-**Características**:
-- Configurado para enviar alertas para webhook Discord
-- Agrupamento de alertas por 'alert' e 'job'
-- Envia notificações de resolução de alertas
-- Intervalo de repetição configurado para 30 minutos
+**Features**:
+- Configured to send alerts to Discord webhook
+- Alert grouping by 'alert' and 'job'
+- Sends alert resolution notifications
+- Repeat interval configured to 30 minutes
 
-**Acesso**: Internamente via `alertmanager:9093`
+**Access**: Internally via `alertmanager:9093`
 
-**Configuração**: Ver `configmaps.yaml` - seção `alertmanager-config`
+**Configuration**: See `configmaps.yaml` - section `alertmanager-config`
 
 ### Loki
 
-**Função**: Sistema de agregação e consulta de logs.
+**Function**: Log aggregation and query system.
 
-**Características**:
-- Armazenamento local simplificado
-- Retenção de logs configurável
-- Integrado com Grafana para visualização
-- Recebe logs de Promtail e OpenTelemetry Collector
+**Features**:
+- Simplified local storage
+- Configurable log retention
+- Integrated with Grafana for visualization
+- Receives logs from Promtail and OpenTelemetry Collector
 
-**Acesso**: Internamente via `loki:3100`
+**Access**: Internally via `loki:3100`
 
-**Configuração**: Ver `configmaps.yaml` - seção `loki-config`
+**Configuration**: See `configmaps.yaml` - section `loki-config`
 
 ### Grafana
 
-**Função**: Plataforma de visualização e análise para métricas, logs e traces.
+**Function**: Visualization and analytics platform for metrics, logs, and traces.
 
-**Características**:
-- Pré-configurado com datasources para Prometheus, Loki e Tempo
-- Credenciais padrão: admin/admin
-- Tema padrão configurado para "light"
-- Correlação entre métricas, logs e traces
+**Features**:
+- Pre-configured with datasources for Prometheus, Loki, and Tempo
+- Default credentials: admin/admin
+- Default theme set to "light"
+- Correlation between metrics, logs, and traces
 
-**Acesso**: Internamente via `grafana:3000`
+**Access**: Internally via `grafana:3000`
 
-**Configuração**: Ver `configmaps.yaml` - seção `grafana-datasource`
+**Configuration**: See `configmaps.yaml` - section `grafana-datasource`
 
 ### Promtail
 
-**Função**: Agente que coleta logs e os envia para o Loki.
+**Function**: Agent that collects logs and sends them to Loki.
 
-**Características**:
-- Descoberta automática de containers Docker com label "logging=promtail"
-- Suporte para multi-linha e formato JSON
-- Adição de labels baseados em metadados dos containers
+**Features**:
+- Automatic discovery of Docker containers with label "logging=promtail"
+- Support for multi-line and JSON format
+- Addition of labels based on container metadata
 
-**Acesso**: Internamente via `promtail:9080`
+**Access**: Internally via `promtail:9080`
 
-**Configuração**: Ver `configmaps.yaml` - seção `promtail-config`
+**Configuration**: See `configmaps.yaml` - section `promtail-config`
 
 ### Tempo
 
-**Função**: Backend de armazenamento e consulta para dados de tracing distribuído.
+**Function**: Backend for storing and querying distributed tracing data.
 
-**Características**:
-- Suporta OTLP, Jaeger e outros formatos de tracing
-- Integração com Prometheus para métricas derivadas
-- Integração com Grafana para visualização
-- Integração com Loki para correlacionar traces com logs
+**Features**:
+- Supports OTLP, Jaeger, and other tracing formats
+- Integration with Prometheus for derived metrics
+- Integration with Grafana for visualization
+- Integration with Loki to correlate traces with logs
 
-**Acesso**: Internamente via `tempo:3200`
+**Access**: Internally via `tempo:3200`
 
-**Configuração**: Ver `configmaps.yaml` - seção `tempo-config`
+**Configuration**: See `configmaps.yaml` - section `tempo-config`
 
 ### Blackbox Exporter
 
-**Função**: Monitoramento de endpoints externos via HTTP, HTTPS, DNS, TCP e ICMP.
+**Function**: Monitoring of external endpoints via HTTP, HTTPS, DNS, TCP, and ICMP.
 
-**Características**:
-- Suporte para probes HTTP, TCP e ICMP
-- Monitoramento de status de sites externos
-- Utilizado pelo Prometheus para verificações de disponibilidade
+**Features**:
+- Support for HTTP, TCP, and ICMP probes
+- Monitoring of external site status
+- Used by Prometheus for availability checks
 
-**Acesso**: Internamente via `blackbox-exporter:9115`
+**Access**: Internally via `blackbox-exporter:9115`
 
-**Configuração**: Ver `configmaps.yaml` - seção `blackbox-config`
+**Configuration**: See `configmaps.yaml` - section `blackbox-config`
 
-## Configurações
+## Configurations
 
-### Personalização
+### Customization
 
-Para personalizar o stack:
+To customize the stack:
 
-1. **Ajustar ConfigMaps**: Modifique os arquivos de configuração em `k8s/configmaps.yaml`
-2. **Ajustar Recursos**: Altere limites de recursos em `k8s/deployments.yaml`
-3. **Modificar Endpoints**: Ajuste os endpoints monitorados pelo Blackbox em `k8s/configmaps.yaml`
-4. **Após alterações**: Execute `./script.sh update` para aplicar as modificações
+1. **Adjust ConfigMaps**: Modify the configuration files in `k8s/configmaps.yaml`
+2. **Adjust Resources**: Change resource limits in `k8s/deployments.yaml`
+3. **Modify Endpoints**: Adjust the endpoints monitored by Blackbox in `k8s/configmaps.yaml`
+4. **After changes**: Run `./script.sh update` to apply the modifications
 
-### Alertas
+### Alerts
 
-O sistema de alertas está configurado com:
+The alert system is configured with:
 
-1. **Regras de Alertas**: Definidas em `alert-rules.yml` dentro do ConfigMap do Prometheus
-2. **Notificações**: Configuradas para Discord em `alertmanager.yml`
-3. **Personalização**:
-   - Modifique as regras de alerta em `configmaps.yaml` - seção `prometheus-config`
-   - Ajuste os webhooks em `configmaps.yaml` - seção `alertmanager-config`
+1. **Alert Rules**: Defined in `alert-rules.yml` within the Prometheus ConfigMap
+2. **Notifications**: Configured for Discord in `alertmanager.yml`
+3. **Customization**:
+    - Modify alert rules in `configmaps.yaml` - section `prometheus-config`
+    - Adjust webhooks in `configmaps.yaml` - section `alertmanager-config`
 
-### Integrações
+### Integrations
 
-O stack vem pré-configurado para integração com:
+The stack comes pre-configured for integration with:
 
-1. **Discord**: Para notificações de alertas
-2. **Aplicações Instrumentadas**: Via OpenTelemetry Collector
-3. **Kubernetes**: Monitoramento de recursos do cluster
+1. **Discord**: For alert notifications
+2. **Instrumented Applications**: Via OpenTelemetry Collector
+3. **Kubernetes**: Monitoring of cluster resources
 
-Para adicionar novas integrações:
-- Adicione novos receivers no OpenTelemetry Collector
-- Configure novos alertmanagers no Prometheus
-- Adicione novos datasources no Grafana
+To add new integrations:
+- Add new receivers in the OpenTelemetry Collector
+- Configure new alertmanagers in Prometheus
+- Add new datasources in Grafana
 
-## Solução de Problemas
+## Troubleshooting
 
-### Problemas comuns e soluções:
+### Common issues and solutions:
 
-1. **Pods em estado CrashLoopBackOff**:
-   ```bash
-   # Verifique os logs do pod com problemas
-   kubectl logs -n observability <nome-do-pod>
-   
-   # Verifique eventos do pod
-   kubectl describe pod -n observability <nome-do-pod>
-   ```
+1. **Pods in CrashLoopBackOff state**:
+    ```bash
+    # Check the logs of the problematic pod
+    kubectl logs -n observability <pod-name>
+    
+    # Check pod events
+    kubectl describe pod -n observability <pod-name>
+    ```
 
-2. **Problemas de configuração**:
-   ```bash
-   # Verifique se os ConfigMaps foram criados corretamente
-   kubectl get configmaps -n observability
-   
-   # Inspecione um ConfigMap específico
-   kubectl get configmap -n observability <nome-do-configmap> -o yaml
-   ```
+2. **Configuration issues**:
+    ```bash
+    # Check if ConfigMaps were created correctly
+    kubectl get configmaps -n observability
+    
+    # Inspect a specific ConfigMap
+    kubectl get configmap -n observability <configmap-name> -o yaml
+    ```
 
-3. **Serviços inacessíveis**:
-   ```bash
-   # Verifique se os endpoints estão corretos
-   kubectl get endpoints -n observability
-   ```
+3. **Inaccessible services**:
+    ```bash
+    # Check if endpoints are correct
+    kubectl get endpoints -n observability
+    ```
 
-4. **Verificar conexões entre componentes**:
-   ```bash
-   # Use kubectl exec para fazer testes de conexão entre pods
-   kubectl exec -it -n observability <nome-do-pod> -- wget -O- <serviço>:<porta>
-   ```
+4. **Check connections between components**:
+    ```bash
+    # Use kubectl exec to test connections between pods
+    kubectl exec -it -n observability <pod-name> -- wget -O- <service>:<port>
+    ```
 
-## Contribuição
+## Contribution
 
-Contribuições são bem-vindas! Para contribuir:
+Contributions are welcome! To contribute:
 
-1. Faça um fork do repositório
-2. Crie um branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Faça commit das suas mudanças (`git commit -m 'Adiciona nova feature'`)
-4. Faça push para o branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
+1. Fork the repository
+2. Create a branch for your feature (`git checkout -b feature/new-feature`)
+3. Commit your changes (`git commit -m 'Add new feature'`)
+4. Push to the branch (`git push origin feature/new-feature`)
+5. Open a Pull Request
 
-## Licença
+## License
 
-Este projeto é licenciado sob a GNU General Public License v3.0 - veja o arquivo [LICENSE](LICENSE) para detalhes.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
 
 ---
-Desenvolvido com ❤️ para simplificar a implementação de observabilidade e monitoramento em ambientes Kubernetes.
+Developed with ❤️ to simplify the implementation of observability and monitoring in Kubernetes environments.
