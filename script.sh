@@ -3,7 +3,7 @@
 # script.sh - Script para gerenciar deployment no Kubernetes
 #
 # Opções:
-#   deploy   - Cria/atualiza o stack de observabilidade
+#   deploy   - Cria/atualiza o stack de observabilidade e monitoramento
 #   destroy  - Remove todos os recursos do stack
 #   update   - Atualiza os recursos (similar ao deploy, mas pode ter lógica adicional)
 #   status   - Exibe o status dos pods e serviços
@@ -154,7 +154,7 @@ function usage() {
   echo "Uso: $0 {deploy|destroy|update|status|logs|help} [serviço] [-f]"
   echo ""
   echo "Comandos:"
-  echo "  deploy   - Cria/atualiza o stack de observabilidade (kubectl apply)"
+  echo "  deploy   - Cria/atualiza o stack de observabilidade e monitoramento (kubectl apply)"
   echo "  destroy  - Remove todos os recursos do stack (kubectl delete)"
   echo "  update   - Atualiza recursos (semelhante ao deploy, mas pode ter lógica extra)"
   echo "  status   - Mostra os pods e serviços em execução"
